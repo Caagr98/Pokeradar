@@ -131,7 +131,7 @@ class PoGoScanner(threading.Thread):
 			seen = self.seen.get(eid, None)
 			if seen == None or (seen == -1 and exp_ts != -1):
 				name = POKEMON_NAMES[p["pokemon_id"]]
-				exp = strftime(exp_ts) if exp_ts != -1 else ">" + strftime(exp_ts + 15 * 60 * 1000)
+				exp = strftime(exp_ts) if exp_ts != -1 else ">" + strftime(now + 15 * 60 * 1000)
 				toPrint.append("%s (%s)" % (name, exp))
 		if len(toPrint):
 			print("%s %s: %s" % (strftime(now), locname, ", ".join(toPrint)))
