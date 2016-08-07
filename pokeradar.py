@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 locations = [
-	("Eivind",  57.796581, 11.750235),
+	("Eivind",	57.796581, 11.750235),
 	("Morgan", 57.793591, 11.744238),
 	("Rörvik", 57.791412, 11.753153),
 	("Karholmen", 57.795726, 11.761720),
@@ -44,6 +44,8 @@ import threading
 import itertools
 import os.path
 import time
+import sys
+import platform
 
 def get_cells(lat, lng, meters):
 	axis = s2sphere.LatLng.from_degrees(lat, lng).normalized().to_point()
@@ -54,13 +56,38 @@ def get_cells(lat, lng, meters):
 	coverer.max_level = 0
 	return coverer.get_covering(region)
 
+def get_encrypt_lib():
+	lib_name = ""
+	if sys.platform == "win32":
+		if platform.architecture()[0] == '64bit':
+			lib_name = "encrypt64bit.dll"
+		else:
+			lib_name = "encrypt32bit.dll"
+	elif sys.platform == "darwin":
+		lib_name = "libencrypt-osx-64.so"
+	elif os.uname()[4].startswith("arm") and platform.architecture()[0] == '32bit':
+		lib_name = "libencrypt-linux-arm-32.so"
+	elif sys.platform.startswith('linux'):
+		if platform.architecture()[0] == '64bit':
+			lib_name = "libencrypt-linux-x86-64.so"
+		else:
+			lib_name = "libencrypt-linux-x86-32.so"
+	elif sys.platform.startswith('freebsd-10'):
+		lib_name = "libencrypt-freebsd10-64.so"
+	else:
+		raise Exception("Unexpected/unsupported platform '{}'".format(sys.platform))
+
+	if not os.path.isfile(lib_name):
+		raise Exception("Could not find {} encryption library {}".format(sys.platform, lib_name))
+	return os.path.join(os.path.dirname(os.path.realpath(__file__)), lib_name)
+
 class PoGoScanner(threading.Thread):
 	def __init__(self, login, locations):
 		threading.Thread.__init__(self, daemon=True)
 		print("Logging in")
 		self.api = pgoapi.PGoApi(provider=login[0], username=login[1], password=login[2])
 		print("Logged in")
-		self.api.activate_signature(os.path.join(os.path.dirname(os.path.realpath(__file__)), "libencrypt.so"))
+		self.api.activate_signature(get_encrypt_lib())
 		self.event = threading.Event()
 		self.seen = {}
 		self.locs = itertools.cycle(locations)
@@ -87,7 +114,7 @@ class PoGoScanner(threading.Thread):
 			if self.seen[k] - now > 15*60*1000:
 				del self.seen[k]
 	
-	def print_pokemon(self, pokemon, now):
+	def print_pokemon(self, locname, pokemon, now):
 		def strftime(ts):
 			return time.strftime("%H:%M:%S", time.localtime(ts / 1000))
 		toPrint = []
@@ -100,11 +127,11 @@ class PoGoScanner(threading.Thread):
 				exp = strftime(exp_ts) if exp_ts != -1 else ">" + strftime(exp_ts + 15 * 60 * 1000)
 				toPrint.append("%s (%s)" % (name, exp))
 		if len(toPrint):
-			print("%s %s: %s" % (time(now), locname, ", ".join(toPrint)))
+			print("%s %s: %s" % (strftime(now), locname, ", ".join(toPrint)))
 
 	def scan(self, locname, lat, lng):
 		pokemon, now = self.get_pokemon(lat, lng)
-		self.print_pokemon(pokemon, now)
+		self.print_pokemon(locname, pokemon, now)
 		self.update(pokemon, now)
 
 try:
