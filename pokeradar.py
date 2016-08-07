@@ -134,6 +134,13 @@ class PoGoScanner(threading.Thread):
 		self.print_pokemon(locname, pokemon, now)
 		self.update(pokemon, now)
 
+if len(sys.argv) > 1 and sys.argv[1] == "-v": #TODO better arg-handling
+	import logging
+	logging.basicConfig(level=logging.DEBUG, format='%(asctime)s [%(module)10s] [%(levelname)5s] %(message)s')
+	logging.getLogger("requests").setLevel(logging.WARNING)
+	logging.getLogger("pgoapi").setLevel(logging.INFO)
+	logging.getLogger("rpc_api").setLevel(logging.INFO)
+
 try:
 	scanner = PoGoScanner(login, locations)
 	scanner.start()
