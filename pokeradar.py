@@ -2,11 +2,11 @@
 locations = [
 	("Eivind",	57.796581, 11.750235),
 	("Morgan", 57.793591, 11.744238),
-	("Rörvik", 57.791412, 11.753153),
+	("Rorvik", 57.791412, 11.753153),
 	("Karholmen", 57.795726, 11.761720),
-	("Bastövägen", 57.800572, 11.749605),
-	("Vråkärr", 57.801681, 11.752957),
-	("Vråkärr NE", 57.801807, 11.754631),
+	("Bastovagen", 57.800572, 11.749605),
+	("Vrakarr", 57.801681, 11.752957),
+	("Vrakarr NE", 57.801807, 11.754631),
 ]
 login = ( "ptc", "ezpex3", "reeper47" )
 
@@ -15,7 +15,7 @@ POKEMON_NAMES = [ "MissingNo", "Bulbasaur", "Ivysaur", "Venusaur", "Charmander",
 		"Caterpie", "Metapod", "Butterfree", "Weedle", "Kakuna", "Beedrill",
 		"Pidgey", "Pidgeotto", "Pidgeot", "Rattata", "Raticate", "Spearow",
 		"Fearow", "Ekans", "Arbok", "Pikachu", "Raichu", "Sandshrew",
-		"Sandslash", "Nidoran♀", "Nidorina", "Nidoqueen", "Nidoran♂",
+		"Sandslash", "Nidoran ♀", "Nidorina", "Nidoqueen", "Nidoran ♂",
 		"Nidorino", "Nidoking", "Clefairy", "Clefable", "Vulpix", "Ninetales",
 		"Jigglypuff", "Wigglytuff", "Zubat", "Golbat", "Oddish", "Gloom",
 		"Vileplume", "Paras", "Parasect", "Venonat", "Venomoth", "Diglett",
@@ -46,6 +46,22 @@ import os.path
 import time
 import sys
 import platform
+
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("-v", "--verbose", help="spam a lot of debug info", action="store_true")
+parser.add_argument("-n", "--nidoran", help="replace Nidoran's prefixes with [MF], to help non-Unicode-aware terminals", action="store_true")
+args = parser.parse_args()
+
+if args.verbose:
+	import logging
+	logging.basicConfig(level=logging.DEBUG, format='%(asctime)s [%(module)10s] [%(levelname)5s] %(message)s')
+	logging.getLogger("requests").setLevel(logging.WARNING)
+	logging.getLogger("pgoapi").setLevel(logging.INFO)
+	logging.getLogger("rpc_api").setLevel(logging.INFO)
+if args.nidoran:
+	POKEMON_NAMES[29] = "Nidoran F"
+	POKEMON_NAMES[32] = "Nidoran M"
 
 def get_cells(lat, lng, meters):
 	axis = s2sphere.LatLng.from_degrees(lat, lng).normalized().to_point()
@@ -133,13 +149,6 @@ class PoGoScanner(threading.Thread):
 		pokemon, now = self.get_pokemon(lat, lng)
 		self.print_pokemon(locname, pokemon, now)
 		self.update(pokemon, now)
-
-if len(sys.argv) > 1 and sys.argv[1] == "-v": #TODO better arg-handling
-	import logging
-	logging.basicConfig(level=logging.DEBUG, format='%(asctime)s [%(module)10s] [%(levelname)5s] %(message)s')
-	logging.getLogger("requests").setLevel(logging.WARNING)
-	logging.getLogger("pgoapi").setLevel(logging.INFO)
-	logging.getLogger("rpc_api").setLevel(logging.INFO)
 
 try:
 	scanner = PoGoScanner(login, locations)
