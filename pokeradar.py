@@ -38,7 +38,7 @@ POKEMON_NAMES = [ "MissingNo", "Bulbasaur", "Ivysaur", "Venusaur", "Charmander",
 		"Moltres", "Dratini", "Dragonair", "Dragonite", "Mewtwo", "Mew" ]
 
 import pgoapi
-import s2sphere
+import pgoapi.utilities as pgoutil
 
 import threading
 import itertools
@@ -62,15 +62,6 @@ if args.verbose:
 if args.nidoran:
 	POKEMON_NAMES[29] = "Nidoran F"
 	POKEMON_NAMES[32] = "Nidoran M"
-
-def get_cells(lat, lng, meters):
-	axis = s2sphere.LatLng.from_degrees(lat, lng).normalized().to_point()
-	angle = s2sphere.Angle.from_degrees(meters / 40075017 * 360)
-	region = s2sphere.Cap.from_axis_angle(axis, angle)
-	coverer = s2sphere.RegionCoverer()
-	coverer.min_level = 15
-	coverer.max_level = 0
-	return coverer.get_covering(region)
 
 def get_encrypt_lib():
 	lib_name = ""
@@ -117,7 +108,7 @@ class PoGoScanner(threading.Thread):
 
 	def get_pokemon(self, lat, lng):
 		self.api.set_position(lat, lng, 40)
-		cells = sorted(cell.id() for cell in get_cells(lat, lng, 70))
+		cells = pgoutil.get_cell_ids(lat, lng, 70)
 		r = self.api.get_map_objects(since_timestamp_ms=[0] * len(cells), cell_id=cells)["responses"]["GET_MAP_OBJECTS"]
 		pokemon = list(itertools.chain.from_iterable(cell.get("catchable_pokemons", []) for cell in r["map_cells"]))
 		now = r["map_cells"][0]["current_timestamp_ms"]
