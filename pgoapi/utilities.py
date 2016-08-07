@@ -35,8 +35,6 @@ from binascii import unhexlify
 
 # other stuff
 from google.protobuf.internal import encoder
-from geopy.geocoders import GoogleV3
-from s2sphere import LatLng, Angle, Cap, RegionCoverer, math
 
 log = logging.getLogger(__name__)
 
@@ -58,6 +56,7 @@ class JSONByteEncoder(JSONEncoder):
         return o.decode('utf-8')
 
 def get_pos_by_name(location_name):
+    from geopy.geocoders import GoogleV3
     geolocator = GoogleV3()
     loc = geolocator.geocode(location_name, timeout=10)
     if not loc:
@@ -70,6 +69,7 @@ def get_pos_by_name(location_name):
 
 EARTH_RADIUS = 6371 * 1000
 def get_cell_ids(lat, long, radius=1000):
+    from s2sphere import LatLng, Angle, Cap, RegionCoverer, math
     # Max values allowed by server according to this comment:
     # https://github.com/AeonLucid/POGOProtos/issues/83#issuecomment-235612285
     if radius > 1500:
