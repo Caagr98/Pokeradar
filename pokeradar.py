@@ -146,6 +146,6 @@ try:
 	scanner.start()
 	while True:
 		scanner.event.set()
-		time.sleep(5)
+		time.sleep(20)
 except KeyboardInterrupt:
 	pass
