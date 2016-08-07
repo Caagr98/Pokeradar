@@ -50,7 +50,7 @@ import platform
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("-v", "--verbose", help="spam a lot of debug info", action="store_true")
-parser.add_argument("-n", "--nidoran", help="replace Nidoran's prefixes with [MF], to help non-Unicode-aware terminals", action="store_true")
+parser.add_argument("-n", "--nidoran", help="replace Nidoran's suffixes with [MF], to help non-Unicode-aware terminals", action="store_true")
 args = parser.parse_args()
 
 if args.verbose:
