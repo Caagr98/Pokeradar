@@ -91,25 +91,35 @@ def get_encrypt_lib():
 class PoGoScanner(threading.Thread):
 	def __init__(self, login, locations):
 		threading.Thread.__init__(self, daemon=True)
-		print("Logging in")
-		self.api = pgoapi.PGoApi(provider=login[0], username=login[1], password=login[2])
-		print("Logged in")
-		self.api.activate_signature(get_encrypt_lib())
+		self.login = login
+		self.locations = locations
 		self.event = threading.Event()
-		self.seen = {}
-		self.locs = itertools.cycle(locations)
+		self.delay = 10
 
 	def run(self):
 		self.running = True
+		print("Logging in")
+		api = pgoapi.PGoApi(provider=login[0], username=login[1], password=login[2])
+		api.activate_signature(get_encrypt_lib())
+		print("Logged in")
+
+		S_FIRSTLOOP = 1
+		self.seen = {}
+		locs = itertools.chain(self.locations, [S_FIRSTLOOP], itertools.cycle(self.locations))
 		while self.running:
 			self.event.wait()
 			self.event.clear()
-			self.scan(*next(self.locs))
+			loc = next(locs)
+			if loc == S_FIRSTLOOP:
+				self.delay = 20
+				continue
+			self.scan(api, *loc)
+		print("Stopping (Unknown reason)")
 
-	def get_pokemon(self, lat, lng):
-		self.api.set_position(lat, lng, 40)
+	def get_pokemon(self, api, lat, lng):
+		api.set_position(lat, lng, 40)
 		cells = pgoutil.get_cell_ids(lat, lng, 70)
-		r = self.api.get_map_objects(since_timestamp_ms=[0] * len(cells), cell_id=cells)["responses"]["GET_MAP_OBJECTS"]
+		r = api.get_map_objects(since_timestamp_ms=[0] * len(cells), cell_id=cells)["responses"]["GET_MAP_OBJECTS"]
 		pokemon = list(itertools.chain.from_iterable(cell.get("catchable_pokemons", []) for cell in r["map_cells"]))
 		now = r["map_cells"][0]["current_timestamp_ms"]
 		return pokemon, now
@@ -136,8 +146,8 @@ class PoGoScanner(threading.Thread):
 		if len(toPrint):
 			print("%s %s: %s" % (strftime(now), locname, ", ".join(toPrint)))
 
-	def scan(self, locname, lat, lng):
-		pokemon, now = self.get_pokemon(lat, lng)
+	def scan(self, api, locname, lat, lng):
+		pokemon, now = self.get_pokemon(api, lat, lng)
 		self.print_pokemon(locname, pokemon, now)
 		self.update(pokemon, now)
 
@@ -146,6 +156,6 @@ try:
 	scanner.start()
 	while True:
 		scanner.event.set()
-		time.sleep(20)
+		time.sleep(scanner.delay)
 except KeyboardInterrupt:
-	pass
+	print("Stopping (^C)")
