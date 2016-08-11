@@ -151,6 +151,11 @@ class PoGoScanner(threading.Thread):
 		self.print_pokemon(locname, pokemon, now)
 		self.update(pokemon, now)
 
+_print = print
+def print(*args, **kwargs):
+	_print(*args, **kwargs)
+	sys.stdout.flush()
+
 try:
 	scanner = PoGoScanner(login, locations)
 	scanner.start()
