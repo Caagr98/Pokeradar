@@ -51,6 +51,7 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("-v", "--verbose", help="spam a lot of debug info", action="store_true")
 parser.add_argument("-n", "--nidoran", help="replace Nidoran's suffixes with [MF], to help non-Unicode-aware terminals", action="store_true")
+parser.add_argument("-c", "--coords",  help="print coords for found Pokemon", action="store_true")
 args = parser.parse_args()
 
 if args.verbose:
@@ -59,9 +60,10 @@ if args.verbose:
 	logging.getLogger("requests").setLevel(logging.WARNING)
 	logging.getLogger("pgoapi").setLevel(logging.INFO)
 	logging.getLogger("rpc_api").setLevel(logging.INFO)
-if args.nidoran:
+if args.nidoran: #TODO I don't really want to have this. Make dad set his locale correctly.
 	POKEMON_NAMES[29] = "Nidoran F"
 	POKEMON_NAMES[32] = "Nidoran M"
+print_coords = args.coords
 
 def get_encrypt_lib():
 	lib_name = ""
@@ -142,7 +144,10 @@ class PoGoScanner(threading.Thread):
 			if seen == None or (seen == -1 and exp_ts != -1):
 				name = POKEMON_NAMES[p["pokemon_id"]]
 				exp = strftime(exp_ts) if exp_ts != -1 else ">" + strftime(now + 15 * 60 * 1000)
-				toPrint.append("%s (%s)" % (name, exp))
+				if not print_coords:
+					toPrint.append("%s (%s)" % (name, exp))
+				else:
+					toPrint.append("%s (%s, [%.4f %.4f])" % (name, exp, p["latitude"], p["longitude"]))
 		if len(toPrint):
 			print("%s %s: %s" % (strftime(now), locname, ", ".join(toPrint)))
 
