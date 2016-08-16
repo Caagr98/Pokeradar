@@ -1,0 +1,10 @@
+ptc $name $pass
+--nidoran
+--coords
+-p Eivind 57.796581 11.750235
+-p Morgan 57.793591 11.744238
+-p Rorvik 57.791412 11.753153
+-p Karholmen 57.795726 11.761720
+-p Bastovagen 57.800572 11.749605
+-p Vrakarr 57.801681 11.752957
+-p Vrakarr\ NE 57.801807 11.754631

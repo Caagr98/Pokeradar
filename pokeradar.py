@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 POKEMON_NAMES = [ "MissingNo", "Bulbasaur", "Ivysaur", "Venusaur", "Charmander",
 		"Charmeleon", "Charizard", "Squirtle", "Wartortle", "Blastoise",
 		"Caterpie", "Metapod", "Butterfree", "Weedle", "Kakuna", "Beedrill",
@@ -26,8 +27,6 @@ POKEMON_NAMES = [ "MissingNo", "Bulbasaur", "Ivysaur", "Venusaur", "Charmander",
 		"Kabuto", "Kabutops", "Aerodactyl", "Snorlax", "Articuno", "Zapdos",
 		"Moltres", "Dratini", "Dragonair", "Dragonite", "Mewtwo", "Mew" ]
 
-
-
 import pgoapi
 import pgoapi.utilities as pgoutil
 
@@ -38,35 +37,23 @@ import time
 import sys
 import platform
 
-import csv
-with open("config.csv") as config:
-	reader = csv.reader(config, delimiter=',', quotechar='"', skipinitialspace=True)
-	login = None
-	locations = []
-	for line in reader:
-		if not line:
-			pass
-		elif len(line) == 1 and len(line[0]) and line[0][0] == '-':
-			sys.argv.append(line[0])
-		elif login == None:
-			assert len(line) == 3
-			login = (line[0], line[1], line[2])
-		else:
-			assert len(line) == 3
-			locations.append((line[0], float(line[1]), float(line[2])))
-
-help = """
-If a line contains a single word, starting with '-', that word will be added to argv.
-The first other line will be used for login info (ptc|google, username, password).
-Remaining lines are interpreted as (name, lat, lng) tuples.
-"""
 import argparse
-parser = argparse.ArgumentParser(description=help)
-parser.add_argument("-v", "--verbose", help="spam a lot of debug info", action="store_true")
-parser.add_argument("-n", "--nidoran", help="replace Nidoran's suffixes with [MF], to help non-Unicode-aware terminals", action="store_true")
-parser.add_argument("-c", "--coords",  help="print coords for found Pokemon", action="store_true")
+import shlex
+parser = argparse.ArgumentParser(fromfile_prefix_chars="@")
+parser.convert_arg_line_to_args = shlex.split
+parser.add_argument("provider", choices=["ptc", "google"])
+parser.add_argument("username")
+parser.add_argument("password")
+parser.add_argument("-p", "--position", nargs=3, action="append", metavar=("NAME", "LAT", "LNG"), help="a position to scan")
+parser.add_argument("-v", "--verbose", action="store_true", help="spam a lot of debug info")
+parser.add_argument("-n", "--nidoran", action="store_true", help="replace Nidoran's suffixes with [MF], to help non-Unicode-aware terminals")
+parser.add_argument("-c", "--coords",  action="store_true", help="print coords for found Pokemon")
 args = parser.parse_args()
 
+login = (args.provider, args.username, args.password)
+locations = []
+for name, lat, lng in args.position:
+	locations.append((name, float(lat), float(lng)))
 if args.verbose:
 	import logging
 	logging.basicConfig(level=logging.DEBUG, format='%(asctime)s [%(module)10s] [%(levelname)5s] %(message)s')
