@@ -103,6 +103,8 @@ class PoGoScanner(threading.Thread):
 		print("Logging in")
 		api = pgoapi.PGoApi(provider=login[0], username=login[1], password=login[2])
 		api.activate_signature(get_encrypt_lib())
+		api.set_position(0, 0, 0) #Obviously wrong if anyone's looking, but so is all of this script
+		status = api.get_player()
 		print("Logged in")
 
 		S_FIRSTLOOP = 1
