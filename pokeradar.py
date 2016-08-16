@@ -1,15 +1,4 @@
 #!/usr/bin/env python3
-locations = [
-	("Eivind", 57.796581, 11.750235),
-	("Morgan", 57.793591, 11.744238),
-	("Rorvik", 57.791412, 11.753153),
-	("Karholmen", 57.795726, 11.761720),
-	("Bastovagen", 57.800572, 11.749605),
-	("Vrakarr", 57.801681, 11.752957),
-	("Vrakarr NE", 57.801807, 11.754631),
-]
-login = ( "ptc", "ezpex3", "reeper47" )
-
 POKEMON_NAMES = [ "MissingNo", "Bulbasaur", "Ivysaur", "Venusaur", "Charmander",
 		"Charmeleon", "Charizard", "Squirtle", "Wartortle", "Blastoise",
 		"Caterpie", "Metapod", "Butterfree", "Weedle", "Kakuna", "Beedrill",
@@ -37,6 +26,8 @@ POKEMON_NAMES = [ "MissingNo", "Bulbasaur", "Ivysaur", "Venusaur", "Charmander",
 		"Kabuto", "Kabutops", "Aerodactyl", "Snorlax", "Articuno", "Zapdos",
 		"Moltres", "Dratini", "Dragonair", "Dragonite", "Mewtwo", "Mew" ]
 
+
+
 import pgoapi
 import pgoapi.utilities as pgoutil
 
@@ -47,8 +38,30 @@ import time
 import sys
 import platform
 
+import csv
+with open("config.csv") as config:
+	reader = csv.reader(config, delimiter=',', quotechar='"', skipinitialspace=True)
+	login = None
+	locations = []
+	for line in reader:
+		if not line:
+			pass
+		elif len(line) == 1 and len(line[0]) and line[0][0] == '-':
+			sys.argv.append(line[0])
+		elif login == None:
+			assert len(line) == 3
+			login = (line[0], line[1], line[2])
+		else:
+			assert len(line) == 3
+			locations.append((line[0], float(line[1]), float(line[2])))
+
+help = """
+If a line contains a single word, starting with '-', that word will be added to argv.
+The first other line will be used for login info (ptc|google, username, password).
+Remaining lines are interpreted as (name, lat, lng) tuples.
+"""
 import argparse
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(description=help)
 parser.add_argument("-v", "--verbose", help="spam a lot of debug info", action="store_true")
 parser.add_argument("-n", "--nidoran", help="replace Nidoran's suffixes with [MF], to help non-Unicode-aware terminals", action="store_true")
 parser.add_argument("-c", "--coords",  help="print coords for found Pokemon", action="store_true")
@@ -121,7 +134,8 @@ class PoGoScanner(threading.Thread):
 	def get_pokemon(self, api, lat, lng):
 		api.set_position(lat, lng, 40)
 		cells = pgoutil.get_cell_ids(lat, lng, 70)
-		r = api.get_map_objects(since_timestamp_ms=[0] * len(cells), cell_id=cells)["responses"]["GET_MAP_OBJECTS"]
+		response = api.get_map_objects(since_timestamp_ms=[0] * len(cells), cell_id=cells)
+		r = response["responses"]["GET_MAP_OBJECTS"]
 		pokemon = list(itertools.chain.from_iterable(cell.get("catchable_pokemons", []) for cell in r["map_cells"]))
 		now = r["map_cells"][0]["current_timestamp_ms"]
 		return pokemon, now
