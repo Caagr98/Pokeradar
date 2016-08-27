@@ -97,6 +97,11 @@ class PoGoScanner(threading.Thread):
 		self.locations = locations
 		self.event = threading.Event()
 		self.delay = 10
+	
+	def check(self, info):
+		if info["status_code"] == 3:
+			print("It appears your account has been banned.")
+			exit(1)
 
 	def run(self):
 		self.running = True
@@ -104,7 +109,16 @@ class PoGoScanner(threading.Thread):
 		api = pgoapi.PGoApi(provider=login[0], username=login[1], password=login[2])
 		api.activate_signature(get_encrypt_lib())
 		api.set_position(0, 0, 0) #Obviously wrong if anyone's looking, but so is all of this script
-		status = api.get_player()
+
+		print(" Downloading player info")
+		time.sleep(1)
+		player = api.get_player()
+		self.check(player)
+		print(" Downloading settings")
+		time.sleep(1)
+		settings = api.download_settings()
+		self.check(settings)
+		time.sleep(1)
 		print("Logged in")
 
 		S_FIRSTLOOP = 1
@@ -124,6 +138,7 @@ class PoGoScanner(threading.Thread):
 		api.set_position(lat, lng, 40)
 		cells = pgoutil.get_cell_ids(lat, lng, 70)
 		response = api.get_map_objects(since_timestamp_ms=[0] * len(cells), cell_id=cells)
+		self.check(response)
 		r = response["responses"]["GET_MAP_OBJECTS"]
 		pokemon = list(itertools.chain.from_iterable(cell.get("catchable_pokemons", []) for cell in r["map_cells"]))
 		now = r["map_cells"][0]["current_timestamp_ms"]
@@ -167,7 +182,7 @@ def print(*args, **kwargs):
 try:
 	scanner = PoGoScanner(login, locations)
 	scanner.start()
-	while True:
+	while scanner.is_alive():
 		scanner.event.set()
 		time.sleep(scanner.delay)
 except KeyboardInterrupt:
